@@ -30,6 +30,13 @@ import * as extended from 'server-extended'
 var result = extended.randomColor();
 ```
 
+Any function that has async in it needs to await for a return.
+```
+chat.registerCmd('getForward', async (player, args) => {
+    var result = await getForwardVector(player);
+});
+```
+
 General functions you can call:
 ```
 /**
