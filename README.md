@@ -3,6 +3,10 @@ A series of custom functions that help with running your server.
 
 ---
 
+Remember to 🌟 this Github if you 💖 it.
+
+---
+
 Installation:
 
 Add 'server-extended' into your deps for your resource.
