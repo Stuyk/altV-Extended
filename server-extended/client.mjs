@@ -6,6 +6,7 @@ var markers = [];
 var hudState = false;
 var camera = null;
 var interpolateCamera = null;
+var drawCursor = false;
 
 alt.onServer('getForwardVector', () => {
     alt.emitServer('getForwardVector', game.getEntityForwardVector(alt.getLocalPlayer().scriptID));
@@ -126,6 +127,9 @@ alt.on('update', () => {
 
     if (hudState)
         game.hideHudAndRadarThisFrame();
+
+    if (drawCursor)
+        game.showCursorThisFrame();
 });
 
 function drawMarkers() {
@@ -172,6 +176,175 @@ function drawMarkers() {
     }
 }
 
-export function distance(positionOne, positionTwo) {
-    return Math.pow(positionOne.x - positionTwo.x, 2) + Math.pow(positionOne.y - positionTwo.y, 2) + Math.pow(positionOne.z - positionTwo.z, 2);
+function degToRad(deg) {
+    return deg * Math.PI / 180.0;
 }
+ 
+function add(vector1, vector2) {
+    var result = {}
+    result.x = vector1.x + vector2.x,
+    result.y = vector1.y + vector2.y,
+    result.z = vector1.z + vector2.z
+    return result;
+}
+ 
+function sub(vector1, vector2) {
+    var result = {}
+    result.x = vector1.x - vector2.x,
+    result.y = vector1.y - vector2.y,
+    result.z = vector1.z - vector2.z
+    return result;
+}
+ 
+function mulNumber(vector1, value) {
+    var result = {}
+    result.x = vector1.x * value;
+    result.y = vector1.y * value;
+    result.z = vector1.z * value;
+    return result;
+}
+
+function rotationToDirection(rotation) {
+    let z = degToRad(rotation.z);
+    let x = degToRad(rotation.x);
+    let num = Math.abs(Math.cos(x));
+
+    let result = {}
+    result.x = (-Math.sin(z) * num);
+    result.y = (Math.cos(z) * num);
+    result.z =  Math.sin(x);
+    return result;
+}
+
+function w2s(position) {
+    let result = game.getScreenCoordFromWorldCoord(position.x, position.y, position.z, undefined, undefined);
+
+    if (!result[0]) {
+        return undefined;
+    }
+ 
+    let newPos = {}
+    newPos.x = (result[1] - 0.5) * 2;
+    newPos.y = (result[2] - 0.5) * 2;
+    newPos.z = 0;
+    return newPos;
+}
+
+function processCoordinates(x, y) {
+    var res = game.getActiveScreenResolution(0, 0);
+    let screenX = res[1];
+    let screenY = res[2];
+
+    let relativeX = (1 - ((x / screenX) * 1.0) * 2);
+    let relativeY = (1 - ((y / screenY) * 1.0) * 2);
+ 
+    if (relativeX > 0.0) {
+        relativeX = -relativeX;
+    } else {
+        relativeX = Math.abs(relativeX);
+    }
+ 
+    if (relativeY > 0.0) {
+        relativeY = -relativeY;
+    } else {
+        relativeY = Math.abs(relativeY);
+    }
+ 
+    return { x: relativeX, y: relativeY };
+}
+
+function s2w(camPos, relX, relY) {
+    let camRot = game.getGameplayCamRot(0);
+    let camForward = rotationToDirection(camRot);
+    let rotUp = add(camRot, { x: 10, y: 0, z: 0 });
+    let rotDown = add(camRot, { x: -10, y: 0, z: 0 });
+    let rotLeft = add(camRot, { x: 0, y: 0, z: -10 });
+    let rotRight = add(camRot, {x: 0, y: 0, z: 10 });
+ 
+    let camRight = sub(rotationToDirection(rotRight), rotationToDirection(rotLeft));
+    let camUp = sub(rotationToDirection(rotUp), rotationToDirection(rotDown));
+ 
+    let rollRad = -degToRad(camRot.y);
+ 
+    let camRightRoll = sub(mulNumber(camRight, Math.cos(rollRad)), mulNumber(camUp, Math.sin(rollRad)));
+    let camUpRoll = add(mulNumber(camRight, Math.sin(rollRad)), mulNumber(camUp, Math.cos(rollRad)));
+ 
+    let point3D = add(
+        add(
+            add(camPos, mulNumber(camForward, 10.0)),
+            camRightRoll
+        ),
+        camUpRoll);
+ 
+    let point2D = w2s(point3D);
+ 
+    if (point2D === undefined) {
+        return add(camPos, mulNumber(camForward, 10.0));
+    }
+ 
+    let point3DZero = add(camPos, mulNumber(camForward, 10.0));
+    let point2DZero = w2s(point3DZero);
+ 
+    if (point2DZero === undefined) {
+        return add(camPos, mulNumber(camForward, 10.0));
+    }
+ 
+    let eps = 0.001;
+ 
+    if (Math.abs(point2D.x - point2DZero.x) < eps || Math.abs(point2D.y - point2DZero.y) < eps) {
+        return add(camPos, mulNumber(camForward, 10.0));
+    }
+ 
+    let scaleX = (relX - point2DZero.x) / (point2D.x - point2DZero.x);
+    let scaleY = (relY - point2DZero.y) / (point2D.y - point2DZero.y);
+    let point3Dret = add(
+        add(
+            add(camPos, mulNumber(camForward, 10.0)),
+            mulNumber(camRightRoll, scaleX)
+        ),
+        mulNumber(camUpRoll, scaleY));
+ 
+    return point3Dret;
+}
+
+function screen2dToWorld3dPosition(absoluteX, absoluteY, flags, ignore) {
+    let camPos = game.getGameplayCamCoord();
+    let processedCoords = processCoordinates(absoluteX, absoluteY);
+    let target = s2w(camPos, processedCoords.x, processedCoords.y);
+ 
+    let dir = sub(target, camPos);
+    let from = add(camPos, mulNumber(dir, 0.05));
+    let to = add(camPos, mulNumber(dir, 300));
+ 
+    let ray = game.startShapeTestRay(from.x, from.y, from.z, to.x, to.y, to.z, flags, ignore, 0);
+    let result = game.getShapeTestResult(ray, undefined, undefined, undefined, undefined);
+    return result;
+}
+export { screen2dToWorld3dPosition };
+
+function getMousePosition() {
+    var x = game.getControlNormal(0, 239);
+    var y = game.getControlNormal(0, 240);
+    return { x: x, y: y }
+}
+export { getMousePosition }
+
+function getMousePositionAbsolute() {
+    var x = game.getControlNormal(0, 239);
+    var y = game.getControlNormal(0, 240);
+    var screenRes = game.getActiveScreenResolution(0, 0);
+    var actualX = screenRes[1] * x;
+    var actualY = screenRes[2] * y;
+    return { x: actualX, y: actualY }
+}
+export { getMousePositionAbsolute }
+
+function getGroundFromMouseAbsolute(absoluteX, absoluteY) {
+    return screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.getLocalPlayer().scriptID);
+}
+export { getGroundFromMouseAbsolute }
+
+function showCursor(state) {
+    drawCursor = state;
+}
+export { showCursor }
