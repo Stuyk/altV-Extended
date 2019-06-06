@@ -45,24 +45,6 @@ chat.registerCmd('getForward', async (player, args) => {
 
 General functions you can call:
 ```
-    export interface Vector3 {
-        x: number,
-        y: number,
-        z: number
-    }
-
-    export interface Scale {
-        x: number,
-        y: number,
-        z: number
-    }
-
-    export interface Direction {
-        x: number,
-        y: number,
-        z: number
-    }
-    
     /**
      * @returns number
      */
