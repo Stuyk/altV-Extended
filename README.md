@@ -29,6 +29,8 @@ deps: [
 
 Examples:
 ```
+// Note that the reference path may not be accurate; and you need to adjust it accordingly.
+/// <reference path="../../../server-extended/server-extended.d.ts" />
 import * as extended from 'server-extended'
 
 var result = extended.randomColor();
