@@ -43,7 +43,8 @@ chat.registerCmd('getForward', async (player, args) => {
 });
 ```
 
-General functions you can call:
+### SERVERSIDE FUNCTIONS:
+
 ```
     /**
      * @returns number
@@ -206,4 +207,38 @@ General functions you can call:
      * @param message Longer Message Here
      */
     export function showNotification(player: any, imageName: string, headerMsg: string, detailsMsg: string, message: string);
+```
+
+### CLIENTSIDE FUNCTIONS
+```
+Flags:
+1: Intersect with map
+2: Intersect with vehicles (used to be mission entities?) (includes train)
+4: Intersect with peds? (same as 8)
+8: Intersect with peds? (same as 4)
+16: Intersect with objects
+32: Unknown
+64: Unknown
+128: Unknown
+256: Intersect with vegetation (plants, coral. trees not included)
+```
+
+```
+import * as extended from 'server-extended';
+
+// Draw a cursor on screen.
+extended.showCursor(state)
+
+// Returns object of x and y
+extended.getMousePositionAbsolute()
+
+// Returns object of x and y
+extended.getMousePosition()
+
+// Always ignore your self:: alt.getLocalPlayer().scriptID;
+// Returns an array. Throw a JSON.Stringify and alt log to see it.
+extended.screen2dToWorld3dPosition(absoluteMouseX, absoluteMouseY, flags, ignore) 
+
+// Returns an array. Throw a JSON.Stringify and alt log to see it.
+extended.getGroundFromMouseAbsolute(absoluteMouseX, absoluteMouseY);
 ```
