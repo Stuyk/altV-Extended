@@ -1,8 +1,12 @@
-import alt from 'alt';
-import game from 'natives';
+import * as alt from 'alt';
+import * as game from 'natives';
+import * as shared from './shared.mjs';
 
 var blips = new Map();
 var markers = [];
+var hudState = true;
+var camera = null;
+var interpolateCamera = null;
 
 alt.onServer('getForwardVector', () => {
     alt.emitServer('getForwardVector', game.getEntityForwardVector(alt.getLocalPlayer().scriptID));
@@ -64,10 +68,64 @@ alt.onServer('deleteMarker', (uniqueID) => {
     markers[result].markForDelete = true;
 });
 
+alt.onServer('toggleHUD', (state) => {
+    hudState = state;
+});
+
+alt.onServer('freezePlayer', (state) => {
+    game.freezeEntityPosition(alt.getLocalPlayer(), state);
+});
+
+// Thanks Moretti for Camera Functions
+alt.onServer('interpolateCamera', (pos1X, pos1Y, pos1Z, rot1, fov, pos2X, pos2Y, pos2Z, rot2, fov2, duration) => {
+    if (camera != null || interpolateCamera != null) {
+        DestroyCamera();
+    }
+
+    native.setFocusArea(pos1X, pos1Y, pos1Z, 0.0, 0.0, 0.0);
+    native.setHdArea(pos1X, pos1Y, pos1Z, 30)
+
+    camera = native.createCamWithParams("DEFAULT_SCRIPTED_CAMERA", pos1X, pos1Y, pos1Z, 0, 0, rot1, fov, false, 0);
+    interpolateCamera = native.createCamWithParams("DEFAULT_SCRIPTED_CAMERA", pos2X, pos2Y, pos2Z, 0, 0, rot2, fov2, false, 0);
+    native.setCamActiveWithInterp(interpolateCamera, camera, duration, 1, 1);
+    native.renderScriptCams(true, false, 0, true, false);
+});
+
+alt.onServer('destroyCamera', DestroyCamera);
+
+function DestroyCamera() {
+    if (camera != -1 || interpolateCamera != -1) {
+        game.destroyAllCams(true);
+        game.renderScriptCams(false, false, 0, false, false);
+        camera = null;
+        interpolateCamera = null;
+    }
+}
+
+alt.onServer('createCamera', (position, rotation, fov) => {
+    if (camera != null || interpolateCamera != null) {
+        destroyCamera();
+    }
+
+    camera = native.createCamWithParams("DEFAULT_SCRIPTED_CAMERA", position.X, position.Y, position.Z, rotation.Z, fov, 0, 2, false, 0);
+    native.setCamActive(camera, true);
+    native.renderScriptCams(true, false, 0, true, false);
+});
+
+alt.onServer('showNotification', (imageName, headerMsg, detailsMsg, message) => {
+    game.setNotificationTextEntry("STRING");
+    game.addTextComponentSubstringPlayerName(message);
+    game.setNotificationMessageClanTag(imageName.toUpperCase(), imageName.toUpperCase(), false, 4, headerMsg, detailsMsg, 1.0, "");
+    game.drawNotification(false, false);
+})
+
 alt.on('update', () => {
     if (markers.length >= 1) {
         drawMarkers();
     }
+
+    if (!hudState)
+        game.hideHudAndRadarThisFrame();
 });
 
 function drawMarkers() {
@@ -103,7 +161,7 @@ function drawMarkers() {
         );
 
         if (markers[i].deleteOnEnter) {
-            if (distance(alt.getLocalPlayer().pos, markers[i].pos) <= markers[i].range) {
+            if (shared.distance(alt.getLocalPlayer().pos, markers[i].pos) <= markers[i].range) {
                 alt.emitServer('enteredMarker', markers[i].uniqueID);
                 markers.splice(i, 1);
             }
@@ -112,8 +170,4 @@ function drawMarkers() {
         if (markers[i].markForDelete !== undefined)
             markers.splice(i, 1);
     }
-}
-
-function distance(positionOne, positionTwo) {
-    return Math.pow(positionOne.x - positionTwo.x, 2) + Math.pow(positionOne.y - positionTwo.y, 2) + Math.pow(positionOne.z - positionTwo.z, 2);
 }
