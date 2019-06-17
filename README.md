@@ -32,7 +32,7 @@ alt.on('playerConnect', (player) => {
 });
 ```
 
-### EXAMPLES:
+### EXAMPLES FOR SERVER-SIDE:
 
 ```js
     // player.forwardVector
@@ -144,3 +144,32 @@ alt.on('playerConnect', (player) => {
     // Set the time to undefined to turn off loading manually.
     player.showLoading('Loading!!!zzz', 5000, 1, undefined);
 ```
+
+### EXAMPLES FOR CLIENT-SIDE:
+```js
+import * as extended from 'server-extended'
+
+// Keybinds
+//key, eventToCall, callEventToServer
+new extended.KeyBind('x', 'test', false);
+
+alt.on('test', () => {
+    alt.log('You pressed X!');
+});
+
+// Loading Spinner
+// text, time in ms, type, toggleOn
+// put time to undefined if you want to toggle this manually.
+new extended.Loading('Loading!!', 5000, 1, false);
+
+// Subtitle at bottom of screen
+// text, time in ms
+new extended.Subtitle('Hello World!', 5000);
+
+
+// There's also these functions haven't tested them cross yet.
+// extended.Screen2dToWorld3dPosition
+// extended.Get3DFrom2D
+```
+
+
