@@ -450,7 +450,7 @@ export function GetMousePOSAbs() {
 }
 
 // Get entity, ground, etc. targeted by mouse position in 3D space.
-export function Screen2dToWorld3dPosition(absoluteX, absoluteY, flags, ignore) {
+export function Screen2dToWorld3dPosition(absoluteX, absoluteY, flags, ignore, callback) {
     let camPos = native.getGameplayCamCoord();
     let processedCoords = processCoordinates(absoluteX, absoluteY);
     let target = s2w(camPos, processedCoords.x, processedCoords.y);
@@ -461,12 +461,14 @@ export function Screen2dToWorld3dPosition(absoluteX, absoluteY, flags, ignore) {
  
     let ray = native.startShapeTestRay(from.x, from.y, from.z, to.x, to.y, to.z, flags, ignore, 0);
     let result = native.getShapeTestResult(ray, undefined, undefined, undefined, undefined);
-    return result;
+    callback(result);
 }
 
 // Get the Ground Location
-export function Get3DFrom2D(absoluteX, absoluteY) {
-    return screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.getLocalPlayer().scriptID);
+export function Get3DFrom2D(absoluteX, absoluteY, callback) {
+    screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.getLocalPlayer().scriptID, (result) => {
+        callback(result);
+    });
 }
 
 function mulNumber(vector1, value) {
