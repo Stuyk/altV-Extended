@@ -1,201 +1,474 @@
-import * as alt from 'alt';
-import * as game from 'natives';
+import alt from 'alt';
+import * as native from 'natives';
 
 var blips = new Map();
-var markers = [];
-var hudState = false;
-var camera = null;
-var interpolateCamera = null;
+var markers = new Map();
+var keybinds = new Map();
+var helpText = undefined;
+var subtitle = undefined;
+var loading = undefined;
+var totalBlips = 0;
+var totalMarkers = 0;
+var drawHud = true;
 var drawCursor = false;
+var isChatOpen = false;
 
-alt.onServer('getForwardVector', () => {
-    alt.emitServer('getForwardVector', game.getEntityForwardVector(alt.getLocalPlayer().scriptID));
-});
+class Marker {
+    constructor(type, pos, dir, rot, scale, color, enterColor, deleteOnEnter, range, uniqueID) {
+        this.type = type;
+        this.pos = pos;
+        this.dir = dir;
+        this.rot = rot;
+        this.scale = scale;
+        this.color = color;
+        this.deleteOnEnter = deleteOnEnter;
+        this.markForDelete = false;
+        this.range = range;
 
-alt.onServer('getGroundZFrom3DCoord', (pos) => {
-    var result;
-    alt.emitServer('getGroundZFrom3DCoord', game.getGroundZFor3dCoord(pos.x, pos.y, pos.z, result, true));
-});
+        if (enterColor !== undefined)
+            this.color2 = enterColor;
 
-alt.onServer('createLocalBlip', (pos, sprite, color, scale, name, shortRange, uniqueID) => {
-    let blip = new alt.PointBlip(pos.x, pos.y, pos.z);
-    blip.sprite = sprite;
-    blip.color = color;
-    blip.scale = scale;
-    blip.name = name;
-    blip.shortRange = shortRange;
+        if (dir === undefined || dir === null)
+            this.dir = { x: 0, y: 0, z: 0 };
 
-    if (uniqueID === undefined)
-        uniqueID = `${Math.random() + 9999999999}`;
+        if (rot === undefined || rot === null)
+            this.rot = { x: 0, y: 0, z: 0 };
 
-    blips[uniqueID] = blip;
-});
+        if (uniqueID === undefined || uniqueID === null) {
+            totalMarkers += 1;
+            this.uniqueID = `${totalMarkers}`;
+        } else {
+            this.uniqueID = uniqueID;
+        }
 
-alt.onServer('deleteLocalBlip', (uniqueID) => {
-    if (blips[uniqueID] !== undefined) {
-        blips[uniqueID].remove();
-    }
-});
+        markers.set(uniqueID, this);
 
-alt.onServer('createMarker', (type, pos, direction, rotation, scale, r, g, b, alpha, bobUpAndDown, faceCamera, isRotating, deleteOnEnter, range, uniqueID) => {
-    var marker = {
-        type: type,
-        pos: pos,
-        dir: direction,
-        rot: rotation,
-        scale: scale,
-        r: r,
-        g: g,
-        b: b,
-        alpha: alpha,
-        bobUpAndDown: bobUpAndDown,
-        faceCamera: faceCamera,
-        isRotating: isRotating,
-        deleteOnEnter: deleteOnEnter,
-        range: range,
-        uniqueID: uniqueID
+        alt.log(markers.size);
     }
 
-    markers.push(marker);
-});
-
-alt.onServer('deleteMarker', (uniqueID) => {
-    var result = markers.findIndex(x => x.uniqueID == uniqueID);
-
-    if (result == -1)
-        return;
-
-    markers[result].markForDelete = true;
-});
-
-alt.onServer('toggleHUD', (state) => {
-    alt.log('hidingHud');
-    hudState = state;
-});
-
-alt.onServer('freezePlayer', (state) => {
-    game.freezeEntityPosition(alt.getLocalPlayer().scriptID, true);
-});
-
-// Thanks Moretti for Camera Functions
-alt.onServer('interpolateCamera', (pos1X, pos1Y, pos1Z, rot1, fov, pos2X, pos2Y, pos2Z, rot2, fov2, duration) => {
-    if (camera != null || interpolateCamera != null) {
-        DestroyCamera();
-    }
-
-    game.setFocusArea(pos1X, pos1Y, pos1Z, 0.0, 0.0, 0.0);
-    game.setHdArea(pos1X, pos1Y, pos1Z, 30)
-
-    camera = game.createCamWithParams("DEFAULT_SCRIPTED_CAMERA", pos1X, pos1Y, pos1Z, 0, 0, rot1, fov, false, 0);
-    interpolateCamera = game.createCamWithParams("DEFAULT_SCRIPTED_CAMERA", pos2X, pos2Y, pos2Z, 0, 0, rot2, fov2, false, 0);
-    game.setCamActiveWithInterp(interpolateCamera, camera, duration, 1, 1);
-    game.renderScriptCams(true, false, 0, true, false);
-});
-
-alt.onServer('destroyCamera', DestroyCamera);
-
-function DestroyCamera() {
-    if (camera != -1 || interpolateCamera != -1) {
-        game.destroyAllCams(true);
-        game.renderScriptCams(false, false, 0, false, false);
-        camera = null;
-        interpolateCamera = null;
-    }
-}
-
-alt.onServer('createCamera', (position, rotation, fov) => {
-    if (camera != null || interpolateCamera != null) {
-        destroyCamera();
-    }
-
-    camera = game.createCamWithParams("DEFAULT_SCRIPTED_CAMERA", position.X, position.Y, position.Z, rotation.Z, fov, 0, 2, false, 0);
-    game.setCamActive(camera, true);
-    game.renderScriptCams(true, false, 0, true, false);
-});
-
-alt.onServer('showNotification', (imageName, headerMsg, detailsMsg, message) => {
-    game.setNotificationTextEntry("STRING");
-    game.addTextComponentSubstringPlayerName(message);
-    game.setNotificationMessageClanTag(imageName.toUpperCase(), imageName.toUpperCase(), false, 4, headerMsg, detailsMsg, 1.0, "");
-    game.drawNotification(false, false);
-})
-
-alt.on('update', () => {
-    if (markers.length >= 1) {
-        drawMarkers();
-    }
-
-    if (hudState)
-        game.hideHudAndRadarThisFrame();
-
-    if (drawCursor)
-        game.showCursorThisFrame();
-});
-
-function drawMarkers() {
-    for(var i = 0; i < markers.length; i++) {
-        if (markers[i] == undefined)
-            continue;
+    Draw() {
+        if (this.markForDelete) {
+            markers.delete(this.uniqueID);
+            return;
+        }
         
-        game.drawMarker(
-            markers[i].type,
-            markers[i].pos.x,
-            markers[i].pos.y,
-            markers[i].pos.z,
-            markers[i].dir.x,
-            markers[i].dir.y,
-            markers[i].dir.z,
-            markers[i].rot.x,
-            markers[i].rot.y,
-            markers[i].rot.z,
-            markers[i].scale.x,
-            markers[i].scale.y,
-            markers[i].scale.z,
-            markers[i].r,
-            markers[i].g,
-            markers[i].b,
-            markers[i].alpha,
-            markers[i].bobUpAndDown,
-            markers[i].faceCamera,
+        let playerPos = alt.getLocalPlayer().pos;
+        let playerDist = Distance(playerPos, this.pos);
+
+        if (this.deleteOnEnter) {
+            if (playerDist <= this.range) {
+                this.markForDelete = true;
+            }
+        }
+
+        // Draw the color the player is entering.
+        if (this.color2 !== undefined) {
+            if (playerDist <= this.range) {
+                native.drawMarker(
+                    this.type,
+                    this.pos.x,
+                    this.pos.y,
+                    this.pos.z,
+                    this.dir.x,
+                    this.dir.y,
+                    this.dir.z,
+                    this.rot.x,
+                    this.rot.y,
+                    this.rot.z,
+                    this.scale.x,
+                    this.scale.y,
+                    this.scale.z,
+                    this.color2.r,
+                    this.color2.g,
+                    this.color2.b,
+                    this.color2.alpha,
+                    false,
+                    false,
+                    2,
+                    false,
+                    undefined,
+                    undefined,
+                    false
+                );
+                return;
+            }
+        }
+        
+        native.drawMarker(
+            this.type,
+            this.pos.x,
+            this.pos.y,
+            this.pos.z,
+            this.dir.x,
+            this.dir.y,
+            this.dir.z,
+            this.rot.x,
+            this.rot.y,
+            this.rot.z,
+            this.scale.x,
+            this.scale.y,
+            this.scale.z,
+            this.color.r,
+            this.color.g,
+            this.color.b,
+            this.color.alpha,
+            false,
+            false,
             2,
-            markers[i].isRotating,
+            false,
             undefined,
             undefined,
             false
         );
-
-        if (markers[i].deleteOnEnter) {
-            if (distance(alt.getLocalPlayer().pos, markers[i].pos) <= markers[i].range) {
-                alt.emitServer('enteredMarker', markers[i].uniqueID);
-                markers.splice(i, 1);
-            }
-        }
-
-        if (markers[i].markForDelete !== undefined)
-            markers.splice(i, 1);
     }
 }
 
-function degToRad(deg) {
-    return deg * Math.PI / 180.0;
+export class HelpText {
+    constructor(text, time) {
+        this.text = text;
+        this.time = Date.now() + time;
+        helpText = this;
+    }
+
+    Draw() {
+        if (this.time < Date.now()) {
+            helpText = undefined;
+        }
+
+        native.beginTextCommandDisplayHelp("STRING")
+        native.addTextComponentSubstringPlayerName(this.text);
+        native.endTextCommandDisplayHelp(0, false, true, 0);
+    }
 }
+
+export class Subtitle {
+    constructor(text, time) {
+        this.text = text;
+        this.time = Date.now() + time;
+        subtitle = this;
+    }
+
+    Draw() {
+        if (this.time < Date.now()) {
+            subtitle = undefined;
+        }
+
+        native.beginTextCommandPrint("STRING")
+        native.addTextComponentSubstringPlayerName(this.text);
+        native.endTextCommandPrint(0, true);
+    }
+}
+
+export class Loading {
+    constructor(text, time, type, toggled) {
+        alt.log(time);
+
+        this.text = text;
+        this.type = type;
+        this.toggled = toggled;
+
+        if (time !== null && time !== undefined) {
+            this.time = Date.now() + time;
+        }
+
+        loading = this;
+        native.removeLoadingPrompt();
+        native.beginTextCommandBusyString("STRING");
+        native.addTextComponentSubstringPlayerName(this.text);
+        native.endTextCommandBusyString(this.type);
+    }
+
+    Draw() {
+        if (this.time < Date.now()) {
+            loading = undefined;
+            native.removeLoadingPrompt();
+        }
+
+        if (this.toggled !== null && this.toggled !== undefined && !this.toggled) {
+            loading = undefined;
+            native.removeLoadingPrompt();
+        }
+    }
+}
+
+export class KeyBind {
+    constructor(keyAsString, eventNameToCall, isServer) {
+        this.key = keyAsString;
+        this.eventNameToCall = eventNameToCall;
+        this.isServer = isServer;
+
+        alt.on('keydown', (key) => {
+            if (isChatOpen)
+                return;
+        
+            if (key == this.key.charCodeAt(0)) {
+                this.Press();
+            }
+        });
+        
+        alt.on('keyup', (key) => {
+            if (isChatOpen)
+                return;
+        
+            if (key == this.key.charCodeAt(0)) {
+                this.Release();
+            }
+        })
+
+        keybinds.set(keyAsString, this);
+    }
+
+    Press() {
+        if (this.press != undefined)
+            return;
+
+        this.press = true;
+
+        if (this.isServer) {
+            alt.emitServer(this.eventNameToCall);
+        } else {
+            alt.emit(this.eventNameToCall);
+        }
+    }
+
+    Release() {
+        this.press = undefined;
+    }
+}
+
+// Chatbox Handler
+alt.on('keydown', (key) => {
+    if ((key == 0x1B && isChatOpen) || (key == 0x0D && isChatOpen)) {
+        isChatOpen = false;
+        alt.log(isChatOpen);
+    }
+
+    if (key == 'T'.charCodeAt(0) && !isChatOpen) {
+        isChatOpen = true;
+        alt.log(isChatOpen);
+    }
+})
+
+alt.on('disconnect', () => {
+    // Clear old blips.
+    for (var [key, value] of Object.entries(blips)) {
+        native.removeBlip(value);
+    }
+
+    // Unfreeze Player
+    native.freezeEntityPosition(alt.getLocalPlayer().scriptID, false);
+
+    // Destroy All Cameras
+    native.renderScriptCams(false, false, 0, false, false);
+    native.destroyAllCams(true);
+
+    // Turn off Screen Fades
+    native.doScreenFadeIn(1);
+    native.transitionFromBlurred(1);
+});
+
+alt.on('update', () => {
+    if (markers.size >= 1) {
+        markers.forEach((value) => {
+            value.Draw();
+        });
+    }
+
+    if (helpText !== undefined) {
+        helpText.Draw();
+    }
+
+    if (subtitle !== undefined) {
+        subtitle.Draw();
+    }
+
+    if (loading !== undefined) {
+        loading.Draw();
+    }
+
+    if (!drawHud)
+        native.hideHudAndRadarThisFrame();
+
+    if (drawCursor)
+        native.showCursorThisFrame();
+});
+
+// forwardVector
+alt.onServer('getForwardVector', () => {
+    var forward = native.getEntityForwardVector(alt.getLocalPlayer().scriptID);
+    alt.emitServer('getForwardVector', forward);
+});
+
+// groundPos
+alt.onServer('getGroundZFrom3DCoord', (pos) => {
+    alt.log(JSON.stringify(pos));
+    alt.emitServer('getGroundZFrom3DCoord', native.getGroundZFor3dCoord(pos.x, pos.y, pos.z, undefined, true));
+});
+
+// Create a new blip.
+alt.onServer('createLocalBlip', (pos, sprite, color, scale, name, shortRange, uniqueID) => {
+    let blip = native.addBlipForCoord(pos.x, pos.y, pos.z);
+    native.setBlipSprite(blip, sprite);
+    native.setBlipColour(blip, color);
+    native.setBlipScale(blip, scale);
+    native.setBlipAsShortRange(blip, shortRange);
+    native.beginTextCommandSetBlipName("STRING");
+    native.addTextComponentSubstringPlayerName(name);
+    native.endTextCommandSetBlipName(blip);
+
+    if (uniqueID === undefined || uniqueID === null) {
+        totalBlips += 1;
+        uniqueID = `${totalBlips}`;
+    }
+
+    if (blips[uniqueID] !== undefined) {
+        native.removeBlip(blips[uniqueID]);
+    }
+
+    blips[uniqueID] = blip;
+});
+
+// Delete a blip by uniqueID
+alt.onServer('deleteLocalBlip', (uniqueID) => {
+    if (blips[uniqueID] !== undefined) {
+        native.removeBlip(blips[uniqueID]);
+        blips.delete(uniqueID);
+    }
+});
+
+// Create a new Marker
+alt.onServer('createLocalMarker', (type, pos, dir, rot, scale, color, enterColor, deleteOnEnter, range, uniqueID) => {
+    new Marker(type, pos, dir, rot, scale, color, enterColor, deleteOnEnter, range, uniqueID);
+});
+
+// Delete a marker by uniqueID.
+alt.onServer('deleteLocalMarker', (uniqueID) => {
+    if (markers.has(uniqueID)) {
+        markers.get(uniqueID).markForDelete = true;
+        markers.delete(uniqueID);
+    }
+});
+
+// Show notification for player:
+alt.onServer('showNotification', (imageName, headerMsg, detailsMsg, message) => {
+    native.setNotificationTextEntry("STRING");
+    native.addTextComponentSubstringPlayerName(message);
+    native.setNotificationMessageClanTag(imageName.toUpperCase(), imageName.toUpperCase(), false, 4, headerMsg, detailsMsg, 1.0, "");
+    native.drawNotification(false, false);
+})
+
+// Freeze a player
+alt.onServer('freezePlayer', (state) => {
+    native.freezeEntityPosition(alt.getLocalPlayer().scriptID, state);
+});
+
+// Fade Out Screen
+alt.onServer('fadeOutScreen', (state, time) => {
+    if (state) {
+        native.doScreenFadeOut(time);
+    } else {
+        native.doScreenFadeIn(time);
+    }
+});
+
+// Blur Out Screen
+alt.onServer('blurOutScreen', (state, time) => {
+    if (state) {
+        native.transitionToBlurred(time);
+    } else {
+        native.transitionFromBlurred(time);
+    }
+});
+
+// Show Cursor
+alt.onServer('showCursor', (state) => {
+    ShowCursor(state);
+});
+
+alt.onServer('drawHud', (state) => {
+    DrawHUD(state);
+});
+
+alt.onServer('displayHelpText', (text, time) => {
+    new HelpText(text, time);
+});
+
+alt.onServer('displaySubtitle', (text, time) => {
+    new Subtitle(text, time);
+});
+
+alt.onServer('showLoading', (text, time, type, toggled) => {
+    new Loading(text, time, type, toggled);
+});
+
+export function DrawHUD(state) {
+    drawHud = state;
+}
+
+export function Distance(positionOne, positionTwo) {
+    return Math.pow(positionOne.x - positionTwo.x, 2) + Math.pow(positionOne.y - positionTwo.y, 2) + Math.pow(positionOne.z - positionTwo.z, 2);
+}
+
+// Show the Cursor
+export function ShowCursor(state) {
+    drawCursor = state;
+}
+
+// Add one vector to another.
+export function AddVector3(vector1, vector2) {
+    return {
+        x: vector1.x + vector2.x,
+        y: vector1.y + vector2.y,
+        z: vector1.z + vector2.z
+    }
+}
+
+// Subtract one vector from another.
+export function SubVector3(vector1, vector2) {
+    return {
+        x: vector1.x - vector2.x,
+        y: vector1.y - vector2.y,
+        z: vector1.z - vector2.z
+    }
+}
+
+// Get Mouse Position as Float
+export function GetMousePOS() {
+    var x = native.getControlNormal(0, 239);
+    var y = native.getControlNormal(0, 240);
+    return { x: x, y: y }
+}
+
+// Get Mouse Position Absolute
+export function GetMousePOSAbs() {
+    var x = native.getControlNormal(0, 239);
+    var y = native.getControlNormal(0, 240);
+    var screenRes = native.getActiveScreenResolution(0, 0);
+    var actualX = screenRes[1] * x;
+    var actualY = screenRes[2] * y;
+    return { x: actualX, y: actualY }
+}
+
+// Get entity, ground, etc. targeted by mouse position in 3D space.
+export function Screen2dToWorld3dPosition(absoluteX, absoluteY, flags, ignore) {
+    let camPos = native.getGameplayCamCoord();
+    let processedCoords = processCoordinates(absoluteX, absoluteY);
+    let target = s2w(camPos, processedCoords.x, processedCoords.y);
  
-function add(vector1, vector2) {
-    var result = {}
-    result.x = vector1.x + vector2.x,
-    result.y = vector1.y + vector2.y,
-    result.z = vector1.z + vector2.z
+    let dir = SubVector3(target, camPos);
+    let from = AddVector3(camPos, mulNumber(dir, 0.05));
+    let to = AddVector3(camPos, mulNumber(dir, 300));
+ 
+    let ray = native.startShapeTestRay(from.x, from.y, from.z, to.x, to.y, to.z, flags, ignore, 0);
+    let result = native.getShapeTestResult(ray, undefined, undefined, undefined, undefined);
     return result;
 }
- 
-function sub(vector1, vector2) {
-    var result = {}
-    result.x = vector1.x - vector2.x,
-    result.y = vector1.y - vector2.y,
-    result.z = vector1.z - vector2.z
-    return result;
+
+// Get the Ground Location
+export function Get3DFrom2D(absoluteX, absoluteY) {
+    return screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.getLocalPlayer().scriptID);
 }
- 
+
 function mulNumber(vector1, value) {
     var result = {}
     result.x = vector1.x * value;
@@ -217,7 +490,7 @@ function rotationToDirection(rotation) {
 }
 
 function w2s(position) {
-    let result = game.getScreenCoordFromWorldCoord(position.x, position.y, position.z, undefined, undefined);
+    let result = native.getScreenCoordFromWorldCoord(position.x, position.y, position.z, undefined, undefined);
 
     if (!result[0]) {
         return undefined;
@@ -231,7 +504,7 @@ function w2s(position) {
 }
 
 function processCoordinates(x, y) {
-    var res = game.getActiveScreenResolution(0, 0);
+    var res = native.getActiveScreenResolution(0, 0);
     let screenX = res[1];
     let screenY = res[2];
 
@@ -254,24 +527,24 @@ function processCoordinates(x, y) {
 }
 
 function s2w(camPos, relX, relY) {
-    let camRot = game.getGameplayCamRot(0);
+    let camRot = native.getGameplayCamRot(0);
     let camForward = rotationToDirection(camRot);
-    let rotUp = add(camRot, { x: 10, y: 0, z: 0 });
-    let rotDown = add(camRot, { x: -10, y: 0, z: 0 });
-    let rotLeft = add(camRot, { x: 0, y: 0, z: -10 });
-    let rotRight = add(camRot, {x: 0, y: 0, z: 10 });
+    let rotUp = AddVector3(camRot, { x: 10, y: 0, z: 0 });
+    let rotDown = AddVector3(camRot, { x: -10, y: 0, z: 0 });
+    let rotLeft = AddVector3(camRot, { x: 0, y: 0, z: -10 });
+    let rotRight = AddVector3(camRot, {x: 0, y: 0, z: 10 });
  
-    let camRight = sub(rotationToDirection(rotRight), rotationToDirection(rotLeft));
-    let camUp = sub(rotationToDirection(rotUp), rotationToDirection(rotDown));
+    let camRight = SubVector3(rotationToDirection(rotRight), rotationToDirection(rotLeft));
+    let camUp = SubVector3(rotationToDirection(rotUp), rotationToDirection(rotDown));
  
     let rollRad = -degToRad(camRot.y);
  
-    let camRightRoll = sub(mulNumber(camRight, Math.cos(rollRad)), mulNumber(camUp, Math.sin(rollRad)));
-    let camUpRoll = add(mulNumber(camRight, Math.sin(rollRad)), mulNumber(camUp, Math.cos(rollRad)));
+    let camRightRoll = SubVector3(mulNumber(camRight, Math.cos(rollRad)), mulNumber(camUp, Math.sin(rollRad)));
+    let camUpRoll = AddVector3(mulNumber(camRight, Math.sin(rollRad)), mulNumber(camUp, Math.cos(rollRad)));
  
-    let point3D = add(
-        add(
-            add(camPos, mulNumber(camForward, 10.0)),
+    let point3D = AddVector3(
+        AddVector3(
+            AddVector3(camPos, mulNumber(camForward, 10.0)),
             camRightRoll
         ),
         camUpRoll);
@@ -279,27 +552,27 @@ function s2w(camPos, relX, relY) {
     let point2D = w2s(point3D);
  
     if (point2D === undefined) {
-        return add(camPos, mulNumber(camForward, 10.0));
+        return AddVector3(camPos, mulNumber(camForward, 10.0));
     }
  
-    let point3DZero = add(camPos, mulNumber(camForward, 10.0));
+    let point3DZero = AddVector3(camPos, mulNumber(camForward, 10.0));
     let point2DZero = w2s(point3DZero);
  
     if (point2DZero === undefined) {
-        return add(camPos, mulNumber(camForward, 10.0));
+        return AddVector3(camPos, mulNumber(camForward, 10.0));
     }
  
     let eps = 0.001;
  
     if (Math.abs(point2D.x - point2DZero.x) < eps || Math.abs(point2D.y - point2DZero.y) < eps) {
-        return add(camPos, mulNumber(camForward, 10.0));
+        return AddVector3(camPos, mulNumber(camForward, 10.0));
     }
  
     let scaleX = (relX - point2DZero.x) / (point2D.x - point2DZero.x);
     let scaleY = (relY - point2DZero.y) / (point2D.y - point2DZero.y);
-    let point3Dret = add(
-        add(
-            add(camPos, mulNumber(camForward, 10.0)),
+    let point3Dret = AddVector3(
+        AddVector3(
+            AddVector3(camPos, mulNumber(camForward, 10.0)),
             mulNumber(camRightRoll, scaleX)
         ),
         mulNumber(camUpRoll, scaleY));
@@ -307,44 +580,6 @@ function s2w(camPos, relX, relY) {
     return point3Dret;
 }
 
-function screen2dToWorld3dPosition(absoluteX, absoluteY, flags, ignore) {
-    let camPos = game.getGameplayCamCoord();
-    let processedCoords = processCoordinates(absoluteX, absoluteY);
-    let target = s2w(camPos, processedCoords.x, processedCoords.y);
- 
-    let dir = sub(target, camPos);
-    let from = add(camPos, mulNumber(dir, 0.05));
-    let to = add(camPos, mulNumber(dir, 300));
- 
-    let ray = game.startShapeTestRay(from.x, from.y, from.z, to.x, to.y, to.z, flags, ignore, 0);
-    let result = game.getShapeTestResult(ray, undefined, undefined, undefined, undefined);
-    return result;
+function degToRad(deg) {
+    return deg * Math.PI / 180.0;
 }
-export { screen2dToWorld3dPosition };
-
-function getMousePosition() {
-    var x = game.getControlNormal(0, 239);
-    var y = game.getControlNormal(0, 240);
-    return { x: x, y: y }
-}
-export { getMousePosition }
-
-function getMousePositionAbsolute() {
-    var x = game.getControlNormal(0, 239);
-    var y = game.getControlNormal(0, 240);
-    var screenRes = game.getActiveScreenResolution(0, 0);
-    var actualX = screenRes[1] * x;
-    var actualY = screenRes[2] * y;
-    return { x: actualX, y: actualY }
-}
-export { getMousePositionAbsolute }
-
-function getGroundFromMouseAbsolute(absoluteX, absoluteY) {
-    return screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.getLocalPlayer().scriptID);
-}
-export { getGroundFromMouseAbsolute }
-
-function showCursor(state) {
-    drawCursor = state;
-}
-export { showCursor }
