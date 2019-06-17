@@ -8,7 +8,7 @@ Remember to 🌟 this Github if you 💖 it.
 Add 'server-extended' into your deps for your resource.
 
 Example (resource.cfg)
-```
+```js
 type: js,
 main: server/startup.mjs,
 client-main: client/startup.mjs,
@@ -22,7 +22,7 @@ deps: [
 ```
 
 ### Server Setup:
-```
+```js
 // Note that the reference path may not be accurate; and you need to adjust it accordingly.
 /// <reference path="../../../server-extended/server-extended.d.ts" />
 import * as extended from 'server-extended'
@@ -34,7 +34,7 @@ alt.on('playerConnect', (player) => {
 
 ### EXAMPLES:
 
-```
+```js
     // player.forwardVector
     player.forwardVector((result) => {
         chat.send(player, `Forward Vector: ${JSON.stringify(result)}`);
