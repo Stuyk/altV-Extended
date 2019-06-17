@@ -467,7 +467,7 @@ export function Screen2dToWorld3dPosition(absoluteX, absoluteY, flags, ignore, c
 // Get the Ground Location
 export function Get3DFrom2D(absoluteX, absoluteY, callback) {
     Screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.getLocalPlayer().scriptID, (result) => {
-        callback(result);
+        callback(result[2]);
     });
 }
 
