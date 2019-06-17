@@ -1,13 +1,9 @@
 # altV-Extended
 A series of custom functions that help with running your server.
 
----
-
 Remember to 🌟 this Github if you 💖 it.
 
----
-
-Installation:
+### Installation:
 
 Add 'server-extended' into your deps for your resource.
 
@@ -25,15 +21,15 @@ deps: [
 ]
 ```
 
----
-
-Examples:
+### Server Setup:
 ```
 // Note that the reference path may not be accurate; and you need to adjust it accordingly.
 /// <reference path="../../../server-extended/server-extended.d.ts" />
 import * as extended from 'server-extended'
 
-var result = extended.randomColor();
+alt.on('playerConnect', (player) => {
+    extended.SetupExportsForPlayer(player);
+});
 ```
 
 ### EXAMPLES:
