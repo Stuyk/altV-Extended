@@ -36,209 +36,115 @@ import * as extended from 'server-extended'
 var result = extended.randomColor();
 ```
 
-Any function that has async in it needs to await for a return.
-```
-chat.registerCmd('getForward', async (player, args) => {
-    var result = await getForwardVector(player);
-});
-```
-
-### SERVERSIDE FUNCTIONS:
+### EXAMPLES:
 
 ```
-    /**
-     * @returns number
-     */
-    export function randomColor(): number;
+    // player.forwardVector
+    player.forwardVector((result) => {
+        chat.send(player, `Forward Vector: ${JSON.stringify(result)}`);
+    });
 
-    /**
-     * @param pos Vector3 Position
-     * @param range Range to Look In
-     * @returns [player1, player2, player3, etc.]
-     */
-    export function getPlayersInRage(pos: Vector3, range: number): Array<any>;
+    // GetGroundZFrom3DCoord
+    Extended.GetGroundZFrom3DCoord(player, player.pos, (result) => {
+        chat.send(player, `Ground POS: ${result}`);
+    });
 
-    /**
-     * @param x
-     * @param y
-     * @param z
-     * @param range Range to look in.
-     * @param randomizeZAxis Randomize the Z axis up and down. Not recommended.
-     * @returns {x, y, z}
-     */
-    export function randomPositionNear(x: number, y: number, z: number, range: number, randomizeZAxis: boolean): Vector3;
+    // AddVector3
+    var newVector = Extended.AddVector3(player.pos, player.pos);
+    chat.send(player, `Added Two Vectors: ${JSON.stringify(newVector)}`);
 
-    /**
-     * Get the position directly in front of the player.
-     * @param player 
-     * @param distance How far should it go forward.
-     * @returns {x, y, z}
-     */
-    export async function positionInFrontOfPlayer(player: any, distance: number);
-
-    /**
-     * Retrieve the player's forward vector.
-     * @param player 
-     * @returns {x, y, z}
-     */
-    export async function getForwardVector(player: any): Vector3;
-
-    /**
-     * Return the ground Z axis from a 3D coordinate.
-     * @param player 
-     * @param pos 
-     * @returns Array: [true, ZPos];
-     */
-    export async function getGroundZFrom3DCoord(player: any, pos: Vector3);
-
-    /**
-     * Returns if the player is in range / near a position.
-     * @param player
-     * @param pos
-     * @param distance
-     * @returns true/false
-     */
-    export function isNearPosition(player: any, pos: Vector3, distance: number): boolean;
-
-    /**
-     * Create a blip specifically for a player.
-     * @param player 
-     * @param pos 
-     * @param sprite 
-     * @param color 
-     * @param scale 
-     * @param name 
-     * @param shortRange 
-     * @param uniqueID Give it a special id to call later.
-     */
-    export function createLocalBlip(player: any, pos: Vector3, sprite: number, color: number, scale: number, name: string, shortRange: boolean, uniqueID: string);
+    // SubVector3
+    newVector = Extended.SubVector3(player.pos, player.pos);
+    chat.send(player, `Subtracted Two Vectors: ${JSON.stringify(newVector)}`);
     
-    /**
-     * Delete a local blip by the unique id assigned.
-     * @param player 
-     * @param uniqueID 
-     */
-    export function deleteLocalBlip(player: any, uniqueID: string)
-    
-    /**
-     * Create a local marker for a player.
-     * @param player 
-     * @param type 
-     * @param pos 
-     * @param direction 
-     * @param rotation 
-     * @param scale 
-     * @param r 
-     * @param g 
-     * @param b 
-     * @param alpha 
-     * @param bobUpAndDown 
-     * @param faceCamera 
-     * @param isRotating 
-     * @param deleteOnEnter Delete this when the player enters?
-     * @param range The range to delete at.
-     * @param uniqueID Any unique id you want to give it.
-     */
-    export function createMarker(player: any, type: number, pos: Vector3, direction: Direction, rotation: Vector3, scale: Scale, r: number, g: number, b: number, alpha: number, bobUpAndDown: boolean, faceCamera: boolean, isRotating: boolean, deleteOnEnter: boolean, range: number, uniqueID: string);
-    
-    /**
-     * Delete a local marker by a uniqueID.
-     * @param player 
-     * @param uniqueID 
-     */
-    export function deleteMarker(player: any, uniqueID: string);
+    // GetRandomColor
+    var randomColor = Extended.GetRandomColor();
+    chat.send(player, `Got Random Color: ${JSON.stringify(randomColor)}`);
 
-    /**
-     * Hide/Show hud for local player.
-     * @param player 
-     * @param state 
-     */
-    export function hideHUD(player: any, state: boolean);
-
-    /**
-     * Freeze Player
-     */
-    export function freezePlayer(player: any, state: boolean);
-
-    /**
-     * Transition a camera from position to another.
-     * @param player Who do show this camera to?
-     * @param pos1X Cam Position 1 X
-     * @param pos1Y Cam Position 1 Y
-     * @param pos1Z Cam Position 1 Z
-     * @param rot1 YAW Rotation for Cam 1
-     * @param fov Field of View for Cam 1
-     * @param pos2X Cam Position 2 X
-     * @param pos2Y Cam Position 2 Y
-     * @param pos2Z Cam Position 2 Z
-     * @param rot2 YAW Rotation for Cam 2
-     * @param fov2 Field of View for Cam 2
-     * @param duration Time between start and end camera changes. In milliseconds.
-     */
-    export function interpolateCamera(player: any, pos1X: number, pos1Y: number, pos1Z: number, rot1: number, fov: number, pos2X: number, pos2Y: number, pos2Z: number, rot2: number, fov2: number, duration: number) {
-        alt.emitClient(player, 'interpolateCamera', pos1X, pos1Y, pos1Z, rot1, fov, pos2X, pos2Y, pos2Z, rot2, fov2, duration);
+    // GetPlayersInRange
+    var playersInRange = Extended.GetPlayersInRange(player.pos, 5);
+    var playerNamesInRange = [];
+    for (var i = 0; i < playersInRange.length; i++) {
+        playerNamesInRange.push(playersInRange[i].name);
     }
-    
-    /**
-     * Create a camera and force a player to look through it.
-     * @param player 
-     * @param pos 
-     * @param rot 
-     * @param fov 
-     */
-    export function createCamera(player: any, pos: Vector3, rot: Vector3, fov: number) {
-        alt.emitClient(player, 'createCamera', pos, rot, fov);
-    }
-    
-    /**
-     * Destroy the existing camera.
-     * @param player 
-     */
-    export function destroyCamera(player: any) {
-        alt.emitClient(player, 'destroyCamera');
-    }
+    chat.send(player, `Players In Range: ${JSON.stringify(playerNamesInRange)}`);
 
-    /**
-     * Draw a notification for a player.
-     * @param player Player to show it to.
-     * @param imageName https://pastebin.com/XdpJVbHz
-     * @param headerMsg Title
-     * @param detailsMsg Small Detail
-     * @param message Longer Message Here
-     */
-    export function showNotification(player: any, imageName: string, headerMsg: string, detailsMsg: string, message: string);
-```
+    // player.isNearPos
+    var inRange = player.isNearPos(player.pos, 5);
+    chat.send(player, `isNearPos: ${inRange}`);
 
-### CLIENTSIDE FUNCTIONS
-```
-Flags:
-1: Intersect with map
-2: Intersect with vehicles (used to be mission entities?) (includes train)
-4: Intersect with peds? (same as 8)
-8: Intersect with peds? (same as 4)
-16: Intersect with objects
-32: Unknown
-64: Unknown
-128: Unknown
-256: Intersect with vegetation (plants, coral. trees not included)
-```
+    // RandomPosAround
+    var randomPos = Extended.RandomPosAround(player.pos, 10);
+    var newVehicle = new alt.Vehicle('infernus', randomPos.x, randomPos.y, randomPos.z, 0, 0, 0);
 
-```
-import * as extended from 'server-extended';
+    // Create new blip
+    player.createLocalBlip(player.pos, 1, 2, 1, 'New Fancy Blip', false, 'abc123');
 
-// Draw a cursor on screen.
-extended.showCursor(state)
+    setTimeout(() => {
+        player.deleteLocalBlip('abc123');
+        chat.send(player, `Deleted Blip: abc123`);
+    }, 5000);
 
-// Returns object of x and y
-extended.getMousePositionAbsolute()
+    // Create new marker
+    // type, pos, dir, rot, scale, color, enterColor, deleteOnEnter, range, uniqueID
+    let rgba = {r: 255, g: 255, b: 255, alpha: 100 };
+    let rgba2 = {r: 255, g: 0, b: 0, alpha: 100 };
+    randomPos = Extended.RandomPosAround(player.pos, 5);
+    player.createLocalMarker(1, randomPos, undefined, undefined, {x: 2, y: 2, z: 2}, rgba, rgba2, true, 2, 'mymarker1');
 
-// Returns object of x and y
-extended.getMousePosition()
+    setTimeout(() => {
+        player.deleteLocalMarker('mymarker1');
+        chat.send(player, `Deleted Marker: mymarker1`);
+    }, 5000);
 
-// Always ignore your self:: alt.getLocalPlayer().scriptID;
-// Returns an array. Throw a JSON.Stringify and alt log to see it.
-extended.screen2dToWorld3dPosition(absoluteMouseX, absoluteMouseY, flags, ignore) 
+    // Show notification to player
+    // imageName, headerMsg, detailsMsg, message
+    player.showNotification('CHAR_AMMUNATION', 'Header', 'Small Details', 'The rest of the owl.');
 
-// Returns an array. Throw a JSON.Stringify and alt log to see it.
-extended.getGroundFromMouseAbsolute(absoluteMouseX, absoluteMouseY);
+    // Freeze the player from moving example
+    chat.send(player, `{00FFFF} You're now Frozen! `);
+    player.freeze(true);
+    setTimeout(() => {
+        player.freeze(false);
+        chat.send(player, `{00FFFF} No longer frozen. `);
+    }, 5000);
+
+    // Screen Fade Example
+    setTimeout(() => {
+        chat.send(player, `{00FFFF} Fading Screen Out `);
+        player.fadeScreen(true, 5000)
+        setTimeout(() => {
+            chat.send(player, `{00FFFF} Fading Screen In `);
+            player.fadeScreen(false, 5000)
+        }, 5000);
+    }, 10000);
+
+    // Screen Blur Example
+    setTimeout(() => {
+        chat.send(player, `{00FF00} Lets blur the screen.`)
+        player.blurScreen(true, 2000);
+        setTimeout(() => {
+            chat.send(player, `{00FF00} No more blur.`)
+            player.blurScreen(false, 2000);
+        }, 3000)
+    }, 2000)
+
+    // Cursor! Can also be called from clientside.
+    chat.send(player, `{0000AA} Look at this cursor!`)
+    player.showCursor(true);
+    setTimeout(() => {
+        player.showCursor(false);
+    }, 5000);
+
+    // Show Help Text
+    player.showHelpText('~g~This is some help text. ~INPUT_ATTACK~', 5000)
+
+    // Show Subtitle
+    player.showSubtitle('Look at all those chickens!', 5000);
+
+    // Display Loading
+    // Last parameter when set to true will turn on loading.
+    // When last parameter is set to false it will turn off loading.
+    // Set the time to undefined to turn off loading manually.
+    player.showLoading('Loading!!!zzz', 5000, 1, undefined);
 ```
