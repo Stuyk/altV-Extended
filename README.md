@@ -166,10 +166,43 @@ new extended.Loading('Loading!!', 5000, 1, false);
 // text, time in ms
 new extended.Subtitle('Hello World!', 5000);
 
+// Get absolute cursor position. Based on total screen res.
+// Looks like: 1920 x 1080
+var cursor = extended.GetMousePOSAbs();
+alt.log(`${JSON.stringify(cursor)}`);
 
-// There's also these functions haven't tested them cross yet.
-// extended.Screen2dToWorld3dPosition
-// extended.Get3DFrom2D
+// Get cursor position based on floats.
+// Looks like: 0.1 x 0.5
+var cursor1 = extended.GetMousePOS();
+alt.log(`${JSON.stringify(cursor1)}`);
+
+// Retrieves entity hovered over by mouse, position, etc.
+// cursorX, cursorY, flags, ignoreEntity, callback
+extended.Screen2dToWorld3dPosition(cursor.x, cursor.y, 1, alt.getLocalPlayer().scriptID, (result) => {
+    alt.log(`Entity, world whatever: ${JSON.stringify(result)}`);
+});
+
+// cursorX, cursorY, result
+extended.Get3DFrom2D(cursor.x, cursor.y, (result) => {
+    alt.log(`3D Pos from 2D: ${JSON.stringify(result)}`);
+});
+
+// Add Two Vectors
+var result = extended.AddVector3(alt.getLocalPlayer().pos, alt.getLocalPlayer().pos);
+alt.log(`${JSON.stringify(result)}`);
+
+// Subtract Two VEctors
+var result = extended.SubVector3(alt.getLocalPlayer().pos, alt.getLocalPlayer().pos);
+alt.log(`${JSON.stringify(result)}`);
+
+// Show or Hide Cursor
+extended.ShowCursor(true);
+
+// Get Distance Between Two Vectors
+var dist = extended.Distance(alt.getLocalPlayer().pos, alt.getLocalPlayer().pos);
+
+// DrawHud
+extended.DrawHUD(true);
 ```
 
 
