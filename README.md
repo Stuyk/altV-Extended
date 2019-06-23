@@ -151,10 +151,10 @@ import * as extended from 'server-extended'
 
 // Keybinds
 //key, eventToCall, callEventToServer
-new extended.KeyBind('x', 'test', false);
+new extended.CreateKeybind('X', 'test', false);
 
 alt.on('test', () => {
-    alt.log('You pressed X!');
+    alt.log('pressed');
 });
 
 // Loading Spinner
