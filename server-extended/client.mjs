@@ -263,13 +263,13 @@ export class ContextMenu {
         if (!this.show)
             return;
 
-        var screenPos = game.getScreenCoordFromWorldCoord(this.pos.x, this.pos.y, this.pos.z, undefined, undefined);
+        var screenPos = native.getScreenCoordFromWorldCoord(this.pos.x, this.pos.y, this.pos.z, undefined, undefined);
 
         if (!screenPos[0])
             return;
 
         for(var i = 0; i < this.items.length; i++) {
-            let lineHeight = game.getTextScaleHeight(0.5, 4);
+            let lineHeight = native.getTextScaleHeight(0.5, 4);
             let lineFourth = lineHeight / 4;
             let actualHeight = (lineFourth + lineHeight);
 
@@ -305,7 +305,7 @@ export class ContextMenu {
     }
 
     isPressed(e) {
-        if (!game.isDisabledControlJustPressed(0, 24))
+        if (!native.isDisabledControlJustPressed(0, 24))
             return;
 
         contextMenus = [];
@@ -314,27 +314,27 @@ export class ContextMenu {
     }
 
     drawRectangle(xPos, yPos, width, height, r, g, b, alpha) {
-        game.drawRect(xPos, yPos, width, height, r, g, b, alpha);
+        native.drawRect(xPos, yPos, width, height, r, g, b, alpha);
     }
 
     drawContextText(text, xPos, yPos, scale, r, g, b, alpha, font, justify, shadow, outline, lineHeight) {
-        game.setTextScale(1.0, scale);
-        game.setTextFont(font);
-        game.setTextColour(r, g, b, alpha); 
-        game.setTextJustification(justify);
+        native.setTextScale(1.0, scale);
+        native.setTextFont(font);
+        native.setTextColour(r, g, b, alpha); 
+        native.setTextJustification(justify);
 
         if (justify == 2) 
-            game.setTextWrap(0.0, x);
+            native.setTextWrap(0.0, x);
 
         if (shadow)    
-            game.setTextDropshadow(0, 0, 0, 0, 255);
+            native.setTextDropshadow(0, 0, 0, 0, 255);
 
         if (outline)   
-            game.setTextOutline();
+            native.setTextOutline();
 
-        game.beginTextCommandDisplayText("STRING");
-        game.addTextComponentSubstringPlayerName(text);
-        game.endTextCommandDisplayText(xPos, yPos  - (lineHeight / 2));
+        native.beginTextCommandDisplayText("STRING");
+        native.addTextComponentSubstringPlayerName(text);
+        native.endTextCommandDisplayText(xPos, yPos  - (lineHeight / 2));
     }
 }
 
