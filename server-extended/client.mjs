@@ -232,7 +232,7 @@ class KeyBind {
 /**
  * Context Menus
  */
-export class ContextMenu {
+class ContextMenu {
     constructor(pos, itemHeight, itemWidth) {
         this.show = false;
         this.pos = pos;
@@ -248,7 +248,7 @@ export class ContextMenu {
 
     ShowMenu(state) {
         this.show = state;
-        isContextOpen = true;
+        this.isContextOpen = true;
     }
 
     DestroyMenu() {
@@ -262,6 +262,8 @@ export class ContextMenu {
     Draw() {
         if (!this.show)
             return;
+
+        native.showCursorThisFrame();
 
         var screenPos = native.getScreenCoordFromWorldCoord(this.pos.x, this.pos.y, this.pos.z, undefined, undefined);
 
@@ -287,7 +289,7 @@ export class ContextMenu {
     }
 
     isHovered(xPos, yPos, width, height) {
-        var cursorPos = extended.getMousePosition();
+        var cursorPos = GetMousePOS();
 
         if (cursorPos.x < xPos - (width / 2))
             return false;
@@ -308,8 +310,8 @@ export class ContextMenu {
         if (!native.isDisabledControlJustPressed(0, 24))
             return;
 
-        contextMenus = [];
-        isContextOpen = false;
+        this.isContextOpen = false;
+        contextMenu = undefined;
         alt.emit(this.items[e].event, this.pos);
     }
 
@@ -413,6 +415,9 @@ alt.on('update', () => {
 
     if (drawCursor)
         native.showCursorThisFrame();
+
+    if (contextMenu !== undefined && contextMenu.show) 
+        contextMenu.Draw();
 });
 
 // forwardVector
@@ -595,6 +600,24 @@ export function Get3DFrom2D(absoluteX, absoluteY, callback) {
 // Create a Keybind
 export function CreateKeybind(keyAsString, eventName, isServer) {
     new KeyBind(keyAsString, eventName, isServer);
+}
+
+// Create Context Menu
+export function CreateContextMenu(pos, itemHeight, itemWidth) {
+    new ContextMenu(pos, itemHeight, itemWidth);
+}
+
+export function AppendContextMenu(item, eventName) {
+    if (contextMenu == undefined) {
+        alt.log('====> Context Menu is UNDEFINED.');
+        return;
+    }
+
+    contextMenu.AppendItem(item, eventName);
+}
+
+export function ShowContextMenu(state) {
+    contextMenu.ShowMenu(state);
 }
 
 function mulNumber(vector1, value) {
