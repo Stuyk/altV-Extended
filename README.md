@@ -151,7 +151,7 @@ import * as extended from 'server-extended'
 
 // Keybinds
 //key, eventToCall, callEventToServer
-new extended.CreateKeybind('X', 'test', false);
+extended.CreateKeybind('X', 'test', false);
 
 alt.on('test', () => {
     alt.log('pressed');
@@ -203,6 +203,16 @@ var dist = extended.Distance(alt.getLocalPlayer().pos, alt.getLocalPlayer().pos)
 
 // DrawHud
 extended.DrawHUD(true);
+
+// 3D Space Context Menus:
+// 3d pos, float width, float height
+extended.CreateContextMenu(alt.getLocalPlayer().pos, 0.3, 0.1);
+
+// item name, event name to call
+extended.AppendContextMenu('abc', 'test');
+
+// call to show
+extended.ShowContextMenu(true);
 ```
 
 
