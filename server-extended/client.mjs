@@ -4,15 +4,19 @@ import * as native from 'natives';
 var blips = new Map();
 var markers = new Map();
 var keybinds = new Map();
-var helpText = undefined;
-var subtitle = undefined;
-var loading = undefined;
+var helpText;
+var subtitle;
+var loading;
 var totalBlips = 0;
 var totalMarkers = 0;
 var drawHud = true;
 var drawCursor = false;
 var isChatOpen = false;
+var contextMenu;
 
+/**
+ * Marker
+ */
 class Marker {
     constructor(type, pos, dir, rot, scale, color, enterColor, deleteOnEnter, range, uniqueID) {
         this.type = type;
@@ -42,8 +46,6 @@ class Marker {
         }
 
         markers.set(uniqueID, this);
-
-        alt.log(markers.size);
     }
 
     Draw() {
@@ -123,6 +125,9 @@ class Marker {
     }
 }
 
+/**
+ * HelpText
+ */
 export class HelpText {
     constructor(text, time) {
         this.text = text;
@@ -141,6 +146,9 @@ export class HelpText {
     }
 }
 
+/**
+ * Subtitle
+ */
 export class Subtitle {
     constructor(text, time) {
         this.text = text;
@@ -159,10 +167,11 @@ export class Subtitle {
     }
 }
 
+/**
+ * Loading
+ */
 export class Loading {
     constructor(text, time, type, toggled) {
-        alt.log(time);
-
         this.text = text;
         this.type = type;
         this.toggled = toggled;
@@ -191,30 +200,14 @@ export class Loading {
     }
 }
 
-export class KeyBind {
+/**
+ * Keybinds
+ */
+class KeyBind {
     constructor(keyAsString, eventNameToCall, isServer) {
-        this.key = keyAsString;
+        this.key = keyAsString.toUpperCase();
         this.eventNameToCall = eventNameToCall;
         this.isServer = isServer;
-
-        alt.on('keydown', (key) => {
-            if (isChatOpen)
-                return;
-        
-            if (key == this.key.charCodeAt(0)) {
-                this.Press();
-            }
-        });
-        
-        alt.on('keyup', (key) => {
-            if (isChatOpen)
-                return;
-        
-            if (key == this.key.charCodeAt(0)) {
-                this.Release();
-            }
-        })
-
         keybinds.set(keyAsString, this);
     }
 
@@ -236,17 +229,146 @@ export class KeyBind {
     }
 }
 
+/**
+ * Context Menus
+ */
+export class ContextMenu {
+    constructor(pos, itemHeight, itemWidth) {
+        this.show = false;
+        this.pos = pos;
+        this.itemHeight = itemHeight;
+        this.itemWidth = itemWidth;
+        this.items = [];
+        contextMenu = this;
+    }
+
+    AppendItem(text, event) {
+        this.items.push({ text: text, event: event });
+    }
+
+    ShowMenu(state) {
+        this.show = state;
+        isContextOpen = true;
+    }
+
+    DestroyMenu() {
+        var res = contextMenus.findIndex(this);
+        if (res <= -1)
+            return;
+
+        contextMenus.splice(res, 1);
+    }
+
+    Draw() {
+        if (!this.show)
+            return;
+
+        var screenPos = game.getScreenCoordFromWorldCoord(this.pos.x, this.pos.y, this.pos.z, undefined, undefined);
+
+        if (!screenPos[0])
+            return;
+
+        for(var i = 0; i < this.items.length; i++) {
+            let lineHeight = game.getTextScaleHeight(0.5, 4);
+            let lineFourth = lineHeight / 4;
+            let actualHeight = (lineFourth + lineHeight);
+
+            var hovered = this.isHovered(screenPos[1], screenPos[2] + (i * actualHeight), this.itemWidth, actualHeight);
+            
+            if (hovered) {
+                this.isPressed(i);
+                this.drawRectangle(screenPos[1], screenPos[2] + (i * actualHeight), this.itemWidth, actualHeight, 0, 0, 0, 100);
+                this.drawContextText(this.items[i].text, screenPos[1], screenPos[2] + (i * actualHeight), 0.5, 255, 255, 255, 255, 4, 0, false, true, lineHeight);
+            } else {
+                this.drawRectangle(screenPos[1], screenPos[2]  + (i * actualHeight), this.itemWidth, actualHeight, 0, 0, 0, 200);
+                this.drawContextText(this.items[i].text, screenPos[1], screenPos[2] + (i * actualHeight), 0.5, 255, 255, 255, 200, 4, 0, false, true, lineHeight);
+            }
+        }
+    }
+
+    isHovered(xPos, yPos, width, height) {
+        var cursorPos = extended.getMousePosition();
+
+        if (cursorPos.x < xPos - (width / 2))
+            return false;
+
+        if (cursorPos.x > xPos + (width / 2))
+            return false;
+
+        if (cursorPos.y < yPos - (height / 2))
+            return false;
+
+        if (cursorPos.y > yPos + (height / 2))
+            return false;
+
+        return true;
+    }
+
+    isPressed(e) {
+        if (!game.isDisabledControlJustPressed(0, 24))
+            return;
+
+        contextMenus = [];
+        isContextOpen = false;
+        alt.emit(this.items[e].event, this.pos);
+    }
+
+    drawRectangle(xPos, yPos, width, height, r, g, b, alpha) {
+        game.drawRect(xPos, yPos, width, height, r, g, b, alpha);
+    }
+
+    drawContextText(text, xPos, yPos, scale, r, g, b, alpha, font, justify, shadow, outline, lineHeight) {
+        game.setTextScale(1.0, scale);
+        game.setTextFont(font);
+        game.setTextColour(r, g, b, alpha); 
+        game.setTextJustification(justify);
+
+        if (justify == 2) 
+            game.setTextWrap(0.0, x);
+
+        if (shadow)    
+            game.setTextDropshadow(0, 0, 0, 0, 255);
+
+        if (outline)   
+            game.setTextOutline();
+
+        game.beginTextCommandDisplayText("STRING");
+        game.addTextComponentSubstringPlayerName(text);
+        game.endTextCommandDisplayText(xPos, yPos  - (lineHeight / 2));
+    }
+}
+
 // Chatbox Handler
 alt.on('keydown', (key) => {
     if ((key == 0x1B && isChatOpen) || (key == 0x0D && isChatOpen)) {
         isChatOpen = false;
-        alt.log(isChatOpen);
     }
 
     if (key == 'T'.charCodeAt(0) && !isChatOpen) {
         isChatOpen = true;
-        alt.log(isChatOpen);
     }
+
+    if (isChatOpen)
+        return;
+
+    keybinds.forEach((value, targetKey) => {
+        if (key !== targetKey.charCodeAt(0))
+            return;
+
+        value.Press();
+    });
+})
+
+alt.on('keyup', (key) => {
+    if (isChatOpen)
+        return;
+
+    keybinds.forEach((value, targetKey) => {
+        if (key !== targetKey.charCodeAt(0))
+            return;
+
+        value.Release();
+    });
 })
 
 alt.on('disconnect', () => {
@@ -301,7 +423,6 @@ alt.onServer('getForwardVector', () => {
 
 // groundPos
 alt.onServer('getGroundZFrom3DCoord', (pos) => {
-    alt.log(JSON.stringify(pos));
     alt.emitServer('getGroundZFrom3DCoord', native.getGroundZFor3dCoord(pos.x, pos.y, pos.z, undefined, true));
 });
 
@@ -469,6 +590,11 @@ export function Get3DFrom2D(absoluteX, absoluteY, callback) {
     Screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.getLocalPlayer().scriptID, (result) => {
         callback(result[2]);
     });
+}
+
+// Create a Keybind
+export function CreateKeybind(keyAsString, eventName, isServer) {
+    new KeyBind(keyAsString, eventName, isServer);
 }
 
 function mulNumber(vector1, value) {
