@@ -1,6 +1,7 @@
 import alt from 'alt';
 import * as native from 'natives';
 
+// States
 var blips = new Map();
 var markers = new Map();
 var keybinds = new Map();
@@ -464,6 +465,8 @@ alt.onServer('deleteLocalBlip', (uniqueID) => {
 
 // Create a new Marker
 alt.onServer('createLocalMarker', (type, pos, dir, rot, scale, color, enterColor, deleteOnEnter, range, uniqueID) => {
+    
+    
     new Marker(type, pos, dir, rot, scale, color, enterColor, deleteOnEnter, range, uniqueID);
 });
 
@@ -532,7 +535,7 @@ export function DrawHUD(state) {
 }
 
 export function Distance(positionOne, positionTwo) {
-    return Math.pow(positionOne.x - positionTwo.x, 2) + Math.pow(positionOne.y - positionTwo.y, 2) + Math.pow(positionOne.z - positionTwo.z, 2);
+    return Math.sqrt(Math.pow(positionOne.x - positionTwo.x, 2) + Math.pow(positionOne.y - positionTwo.y, 2) + Math.pow(positionOne.z - positionTwo.z, 2));
 }
 
 // Show the Cursor
