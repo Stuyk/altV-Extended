@@ -89,7 +89,7 @@ export function ColshapeEmitter(pos, enterEventName, exitEventName, markerType, 
 
 // This needs to be called for each player that joins the server.
 export function SetupExportsForPlayer(player) {
-    if (!player) {
+    if (player === undefined) {
         throw new Error('SetupExportsForPlayer => player is undefined.')
     }
 
@@ -102,7 +102,7 @@ export function SetupExportsForPlayer(player) {
 
     // Returns if the player is near a position.
     player.isNearPos = (pos, range) => {
-        if (!pos || !range) {
+        if (pos === undefined || range === undefined) {
             throw new Error('isNearPos => pos or range is undefined');
         }
 
@@ -114,7 +114,7 @@ export function SetupExportsForPlayer(player) {
 
     // Create a local blip for a player.
     player.createLocalBlip = (pos, sprite, color, scale, name, shortRange, uniqueID) => {
-        if (!pos || !sprite || !color || !scale || !shortRange) {
+        if (pos === undefined || sprite === undefined || color === undefined || scale === undefined) {
             throw new Error('createLocalBlip => One or more parameters is undefined.');
         }
 
@@ -123,7 +123,7 @@ export function SetupExportsForPlayer(player) {
 
     // Delete a local blip by uniqueID.
     player.deleteLocalBlip = (uniqueID) => {
-        if (!uniqueID) {
+        if (uniqueID === undefined) {
             throw new Error('deleteLocalBlip => uniqueID is undefined.')
         }
 
@@ -132,7 +132,7 @@ export function SetupExportsForPlayer(player) {
 
     // Create a marker for a player.
     player.createLocalMarker = (type, pos, dir, rot, scale, color, enterColor, deleteOnEnter, range, uniqueID) => {
-        if (!type || !pos || !dir || !rot || !scale || !color || !enterColor || !deleteOnEnter || !range) {
+        if (type === undefined || pos === undefined || scale === undefined || color === undefined || enterColor === undefined || range === undefined) {
             throw new Error('createLocalMarker => One or more parameters is undefined.')
         }
 
@@ -141,7 +141,7 @@ export function SetupExportsForPlayer(player) {
 
     // Delete a marker for a player.
     player.deleteLocalMarker = (uniqueID) => {
-        if (!uniqueID) {
+        if (uniqueID === undefined) {
             throw new Error('deleteLocalMarker => uniqueID is undefined.');
         }
 
@@ -150,7 +150,7 @@ export function SetupExportsForPlayer(player) {
 
     // Show Notification to Player
     player.showNotification = (imageName, headerMsg, detailsMsg, message) => {
-        if (!imageName || !headerMsg || !detailsMsg || !message) {
+        if (imageName === undefined || headerMsg === undefined || detailsMsg === undefined || message === undefined) {
             throw new Error('showNotification => One or more parameters is undefined.');
         }
 
@@ -164,7 +164,7 @@ export function SetupExportsForPlayer(player) {
 
     // Fade screen to black and back.
     player.fadeScreen = (state, timeInMS) => {
-        if (!state || !timeInMS) {
+        if (timeInMS === undefined) {
             throw new Error('fadeScreen => state or timeInMS is undefined.');
         }
 
@@ -173,7 +173,7 @@ export function SetupExportsForPlayer(player) {
 
     // Blur screen.
     player.blurScreen = (state, timeInMS) => {
-        if (!state || !timeInMS) {
+        if (timeInMS === undefined) {
             throw new Error('blurScreen => state or timeInMS is undefined.');
         }
 
@@ -187,7 +187,7 @@ export function SetupExportsForPlayer(player) {
 
     // Show Help Text
     player.showHelpText = (text, timeInMS) => {
-        if (!text || !timeInMS) {
+        if (text === undefined || timeInMS === undefined) {
             throw new Error('showHelpText => text or timeInMS is undefined.');
         }
 
@@ -196,7 +196,7 @@ export function SetupExportsForPlayer(player) {
 
     // Show Subtitle Text
     player.showSubtitle = (text, timeInMS) => {
-        if (!text || !timeInMS) {
+        if (text === undefined || timeInMS === undefined) {
             throw new Error('showSubtitle => text or timeInMS is undefined.');
         }
 
@@ -205,7 +205,7 @@ export function SetupExportsForPlayer(player) {
 
     // Display Loading
     player.showLoading = (text, timeInMS, type, toggled) => {
-        if (!text || !timeInMS || !type) {
+        if (text === undefined || timeInMS === undefined) {
             throw new Error('showLoading => One or more parameters is undefined.');
         }
 
@@ -216,7 +216,7 @@ export function SetupExportsForPlayer(player) {
 // Returns the GroundLevel from a 3D Position near a player.
 // Returns undefined if ground was not present. Otherwise a number.
 export function GetGroundZFrom3DCoord(player, pos, callback) {
-    if (!player || !pos) {
+    if (player === undefined || pos === undefined) {
         throw new Error('GetGroundZFrom3DCoord => player or pos is undefined.');
     }
     
@@ -230,7 +230,7 @@ export function GetGroundZFrom3DCoord(player, pos, callback) {
 
 // Add one vector to another.
 export function AddVector3(vector1, vector2) {
-    if (!vector1 || !vector2) {
+    if (vector1 === undefined || vector2 === undefined) {
         throw new Error('AddVector => vector1 or vector2 is undefined');
     }
     
@@ -243,7 +243,7 @@ export function AddVector3(vector1, vector2) {
 
 // Subtract one vector from another.
 export function SubVector3(vector1, vector2) {
-    if (!vector1 || !vector2) {
+    if (vector1 === undefined || vector2 === undefined) {
         throw new Error('AddVector => vector1 or vector2 is undefined');
     }
 
@@ -265,7 +265,7 @@ export function GetRandomColor() {
 
 // Get all of the players in range of a position.
 export function GetPlayersInRange(pos, range) {
-    if (!pos || !range) {
+    if (pos === undefined || range === undefined) {
         throw new Error('GetPlayersInRange => pos or range is undefined');
     }
     
@@ -282,7 +282,7 @@ export function GetPlayersInRange(pos, range) {
 
 // Get the distance between two vectors.
 export function Distance(vector1, vector2) {
-    if (!vector1 || !vector2) {
+    if (vector1 === undefined || vector2 === undefined) {
         throw new Error('AddVector => vector1 or vector2 is undefined');
     }
 
@@ -291,7 +291,7 @@ export function Distance(vector1, vector2) {
 
 // Get Random Position Around Position
 export function RandomPosAround(pos, range) {
-    if (!pos || !range) {
+    if (pos === undefined || range === undefined) {
         throw new Error('RandomPosAround => pos or range is undefined');
     }
 
