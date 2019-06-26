@@ -2,7 +2,7 @@ import * as alt from 'alt';
 import { Player, Vehicle } from 'alt';
 import * as color from './colors.mjs';
 
-console.log(`${color.FgYellow}Extended v0.2 is running.`);
+console.log(`${color.FgYellow}Extended v0.3 is running.`);
 
 var markersToLoad = [];
 
@@ -286,7 +286,7 @@ export function Distance(vector1, vector2) {
         throw new Error('AddVector => vector1 or vector2 is undefined');
     }
 
-    return Math.pow(vector1.x - vector2.x, 2) + Math.pow(vector1.y - vector2.y, 2) + Math.pow(vector1.z - vector2.z, 2);
+    return Math.sqrt(Math.pow(vector1.x - vector2.x, 2) + Math.pow(vector1.y - vector2.y, 2) + Math.pow(vector1.z - vector2.z, 2));
 }
 
 // Get Random Position Around Position
