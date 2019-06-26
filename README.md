@@ -143,6 +143,32 @@ alt.on('playerConnect', (player) => {
     // When last parameter is set to false it will turn off loading.
     // Set the time to undefined to turn off loading manually.
     player.showLoading('Loading!!!zzz', 5000, 1, undefined);
+    
+    // Colshape Event Emitter
+    // Automatically calls an event when a player or entity enters/exits a colshape.
+    // pos, enterEventName, exitEventName, markerType, enterMarkerColor, exitMarkerColor,
+    // markerScale, markerRange, isEnterClientside = false, isExitClientside = false, isPlayerOnly = true
+    extended.ColshapeEmitter(
+        {x: 794, y: -260, z: 66}, 
+        'test1', 
+        'test2', 
+        1, 
+        {r: 255, g: 255, b: 255, alpha: 50}, 
+        {r: 255, g: 0, b: 0, alpha: 50},
+        {x: 5, y: 5, z: 2},
+        5,
+        false,
+        false,
+        true 
+    );
+
+    alt.on('test1', (entity) => {
+        chat.send(entity, '{FF0000} You have entered the colshape for test1');
+    });
+
+    alt.on('test2', (entity) => {
+        chat.send(entity, '{FF0000} You have left the colshape for test2');
+    });
 ```
 
 ### EXAMPLES FOR CLIENT-SIDE:
