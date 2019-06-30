@@ -152,19 +152,24 @@ export class HelpText {
  */
 export class Subtitle {
     constructor(text, time) {
+        this.alpha = 255;
         this.text = text;
         this.time = Date.now() + time;
+        this.res = native.getActiveScreenResolution(0, 0);
         subtitle = this;
     }
 
     Draw() {
         if (this.time < Date.now()) {
-            subtitle = undefined;
+            this.alpha -= 1;
         }
 
-        native.beginTextCommandPrint("STRING")
-        native.addTextComponentSubstringPlayerName(this.text);
-        native.endTextCommandPrint(0, true);
+        if (this.alpha <= 10) {
+            subtitle = undefined;
+            return;
+        }
+
+        drawText(this.text, 0.5, 0.85, 0.8, 4, 255, 255, 255, this.alpha, true);
     }
 }
 
@@ -736,4 +741,28 @@ function s2w(camPos, relX, relY) {
 
 function degToRad(deg) {
     return deg * Math.PI / 180.0;
+}
+
+/**
+ * Draw text in an update loop.
+ * @param msg 
+ * @param x is a float 0 - 1.0
+ * @param y is a float 0 - 1.0
+ */
+function drawText(msg, x, y, scale, fontType, r, g, b, a, useOutline = true, useDropShadow = true) {
+    native.beginTextCommandDisplayText("STRING");
+    native.addTextComponentSubstringPlayerName(msg);
+    native.setTextFont(fontType);
+    native.setTextScale(1, scale);
+    native.setTextWrap(0.0, 1.0);
+    native.setTextCentre(true);
+    native.setTextColour(r, g, b, a);
+
+    if (useOutline)
+        native.setTextOutline();
+
+    if (useDropShadow)
+        native.setTextDropShadow();
+
+    native.endTextCommandDisplayText(x, y);
 }
