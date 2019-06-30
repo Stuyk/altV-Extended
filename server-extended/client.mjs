@@ -749,7 +749,7 @@ function degToRad(deg) {
  * @param x is a float 0 - 1.0
  * @param y is a float 0 - 1.0
  */
-function drawText(msg, x, y, scale, fontType, r, g, b, a, useOutline = true, useDropShadow = true) {
+export function drawText(msg, x, y, scale, fontType, r, g, b, a, useOutline = true, useDropShadow = true) {
     native.beginTextCommandDisplayText("STRING");
     native.addTextComponentSubstringPlayerName(msg);
     native.setTextFont(fontType);
