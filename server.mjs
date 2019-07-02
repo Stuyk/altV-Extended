@@ -1,7 +1,7 @@
 import * as alt from 'alt';
 import * as color from './colors.mjs';
 
-console.log(`${color.FgYellow}Extended v0.3 is running.`);
+console.log(`${color.FgYellow}Extended v0.4 is running.`);
 
 const markersToLoad = [];
 const callbacks = [];
