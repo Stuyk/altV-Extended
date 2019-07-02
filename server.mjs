@@ -3,7 +3,9 @@ import * as color from './colors.mjs';
 
 console.log(`${color.FgYellow}Extended v0.3 is running.`);
 
-var markersToLoad = [];
+const markersToLoad = [];
+const callbacks = [];
+const registeredCallbacks = new Set();
 
 alt.on('playerConnect', (player) => {
 	if (markersToLoad.length >= 1) {
@@ -24,7 +26,6 @@ alt.on('playerConnect', (player) => {
 				undefined
 			);
 		}
-
 	}
 });
 
@@ -302,11 +303,12 @@ export function RandomPosAround(pos, range) {
 }
 
 async function SetupCallback(player, eventName, args, callback) {
-	var results = await ClientsideCall(player, eventName, args);
-	callback(results);
+	ClientsideCall(player, eventName, args, (result) => {
+		callback(result);
+	});
 }
 
-async function ClientsideCall(player, eventName, args) {
+async function ClientsideCall(player, eventName, args, callback) {
 	if (player === undefined)
 		throw new Error('ClientsideCall => Player is undefined.');
 
@@ -314,13 +316,50 @@ async function ClientsideCall(player, eventName, args) {
 		throw new Error('ClientsideCall => eventName is undefined.');
 
 	alt.emitClient(player, eventName, args);
-    
-	const promise = new Promise((resolve) => {
-		alt.onClient(eventName, (player, results) => {
-			resolve(results);
-		});
-	});
+	callbacks.push({player, eventName, startTime: Date.now(), completed: false, callback});
 
-	var finalResult = await promise;
-	return finalResult;
+	if (registeredCallbacks.has(eventName))
+		return;
+
+	registeredCallbacks.add(eventName);
+
+	alt.onClient(eventName, (player, results) => {
+		let index = -1;
+		for(var i = 0; i < callbacks.length; i++) {
+			if (callbacks[i].player !== player && callbacks[i].eventName !== eventName)
+				continue;
+			index = i;
+			break; 
+		}
+
+		if (index <= -1)
+			return;
+
+		callbacks[i].callback(results);
+		callbacks[i].completed = true;
+	});
 }
+
+// Callback Cleanup
+setInterval(() => {
+	var callbacksCleanedUp = 0;
+	var i = callbacks.length;
+	while(i--) {
+		if (callbacks[i].completed) {
+			callbacks.splice(i, 1);
+			callbacksCleanedUp += 1;
+			continue;
+		}
+
+		if ((callbacks[i].startTime + 10000) < Date.now()) {
+			callbacks.splice(i, 1);
+			callbacksCleanedUp += 1;
+			continue;
+		}
+	}
+
+	if (callbacksCleanedUp <= 0)
+		return;
+
+	console.log(`===> Extended: Cleaned up ${callbacksCleanedUp}`);
+}, 5000);

@@ -423,7 +423,9 @@ alt.onServer('getForwardVector', () => {
 
 // groundPos
 alt.onServer('getGroundZFrom3DCoord', (pos) => {
-	alt.emitServer('getGroundZFrom3DCoord', native.getGroundZFor3dCoord(pos.x, pos.y, pos.z, undefined, true));
+	var z = native.getGroundZFor3dCoord(pos.x, pos.y, pos.z, undefined, true);
+	alt.log(JSON.stringify(z));
+	alt.emitServer('getGroundZFrom3DCoord', z);
 });
 
 // Create a new blip.
