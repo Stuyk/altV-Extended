@@ -162,6 +162,10 @@ alt.on('playerConnect', (player) => {
         true 
     );
 
+    // Displays a message above a player's head for a period of time.
+    // player, message, timeInMS, range, r, g, b, a
+    extended.DisplayAboveHead(player, `Look at my fancy message everyone in a range can see.`, 5000, 10, 190, 165, 200, 255);
+
     alt.on('test1', (entity) => {
         chat.send(entity, '{FF0000} You have entered the colshape for test1');
     });
