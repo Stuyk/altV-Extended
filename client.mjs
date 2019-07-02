@@ -5,6 +5,7 @@ import * as native from 'natives';
 var blips = new Map();
 var markers = new Map();
 var keybinds = new Map();
+var messagesAboveHead = [];
 var helpText;
 var subtitle;
 var loading;
@@ -413,6 +414,9 @@ alt.on('update', () => {
 
 	if (contextMenu !== undefined && contextMenu.show) 
 		contextMenu.Draw();
+
+	if (messagesAboveHead.length >= 1)
+		drawMessagesAboveHead();
 });
 
 // forwardVector
@@ -526,6 +530,10 @@ alt.onServer('showLoading', (text, time, type, toggled) => {
 	new Loading(text, time, type, toggled);
 });
 
+alt.onServer('displayMessageAboveHead', (player, message, timeInMS, r, g, b, a) => {
+	messagesAboveHead.push({ player, message, time: Date.now() + timeInMS, completed: false, r, g, b, a});
+});
+
 export function DrawHUD(state) {
 	drawHud = state;
 }
@@ -617,6 +625,48 @@ export function AppendContextMenu(item, eventName) {
 
 export function ShowContextMenu(state) {
 	contextMenu.ShowMenu(state);
+}
+
+// { player, message, time: Date.now() + timeInMS, completed: false, r, g, b, a }
+function drawMessagesAboveHead() {
+	for(const msg of messagesAboveHead) {
+		if (msg.completed)
+			continue;
+		
+		if (msg.time < Date.now()) {
+			msg.completed = true;
+			continue;
+		}
+
+		let distanceFromLocal = Distance(msg.player.pos, alt.getLocalPlayer().pos);
+		if (distanceFromLocal >= 25)
+			continue;
+
+		// Make sure player is on screen.
+		let result = native.getScreenCoordFromWorldCoord(msg.player.pos.x,msg.player.pos.y,msg.player.pos.z + 1.20, undefined, undefined);
+		
+		if (!result[0])
+			continue;
+
+		let scale = distanceFromLocal / 25;
+		if (scale < 0.5) {
+			scale = 0.5;
+		}
+
+		if (scale > 0.6)
+			scale = 0.6;
+
+		let yModifier = (distanceFromLocal / 25) / 4;
+		if (yModifier > 0.05)
+			yModifier = 0.05;
+
+		let y = result[2] - yModifier;
+
+		if (y <= 0)
+			y = 0;
+
+		drawText(msg.message, result[1], y, 0.5, 4, msg.r, msg.g, msg.b, msg.a, true, false, 99);
+	}
 }
 
 function mulNumber(vector1, value) {
@@ -740,7 +790,8 @@ function degToRad(deg) {
  * @param x is a float 0 - 1.0
  * @param y is a float 0 - 1.0
  */
-export function drawText(msg, x, y, scale, fontType, r, g, b, a, useOutline = true, useDropShadow = true) {
+export function drawText(msg, x, y, scale, fontType, r, g, b, a, useOutline = true, useDropShadow = true, layer = 0) {
+	native.setUiLayer(layer);
 	native.beginTextCommandDisplayText('STRING');
 	native.addTextComponentSubstringPlayerName(msg);
 	native.setTextFont(fontType);
@@ -757,3 +808,15 @@ export function drawText(msg, x, y, scale, fontType, r, g, b, a, useOutline = tr
 
 	native.endTextCommandDisplayText(x, y);
 }
+
+// Cleanup
+alt.setInterval(() => {
+	var i = messagesAboveHead.length;
+	while(i--) {
+		if (messagesAboveHead[i].completed) {
+			messagesAboveHead.splice(i, 1);
+			alt.log('Cleaned up message above head.');
+			continue;
+		}
+	}
+}, 2500);

@@ -302,6 +302,23 @@ export function RandomPosAround(pos, range) {
 	};
 }
 
+// Display a message above a player's head.
+export function DisplayAboveHead(player, message, timeInMS, rangeToDisplay, r = 255, g = 255, b = 255, a = 255) {
+	if (message === undefined || timeInMS <= 0) {
+		throw new Error('DisplayAboveHead => message or timeInMS is undefined.');
+	}
+
+	var players = GetPlayersInRange(player.pos, rangeToDisplay);
+
+	for (const target of players) {
+		if (target === player) {
+			continue;
+		}
+
+		alt.emitClient(target, 'displayMessageAboveHead', player, message, timeInMS, r, g, b, a);
+	}
+}
+
 async function SetupCallback(player, eventName, args, callback) {
 	ClientsideCall(player, eventName, args, (result) => {
 		callback(result);
