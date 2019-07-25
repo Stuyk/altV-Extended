@@ -56,7 +56,7 @@ class Marker {
 			return;
 		}
         
-		let playerPos = alt.getLocalPlayer().pos;
+		let playerPos = alt.Player.local.pos;
 		let playerDist = Distance(playerPos, this.pos);
 
 		if (this.deleteOnEnter) {
@@ -376,7 +376,7 @@ alt.on('disconnect', () => {
 	}
 
 	// Unfreeze Player
-	native.freezeEntityPosition(alt.getLocalPlayer().scriptID, false);
+	native.freezeEntityPosition(alt.Player.local.scriptID, false);
 
 	// Destroy All Cameras
 	native.renderScriptCams(false, false, 0, false, false);
@@ -421,7 +421,7 @@ alt.on('update', () => {
 
 // forwardVector
 alt.onServer('getForwardVector', () => {
-	var forward = native.getEntityForwardVector(alt.getLocalPlayer().scriptID);
+	var forward = native.getEntityForwardVector(alt.Player.local.scriptID);
 	alt.emitServer('getForwardVector', forward);
 });
 
@@ -488,7 +488,7 @@ alt.onServer('showNotification', (imageName, headerMsg, detailsMsg, message) => 
 
 // Freeze a player
 alt.onServer('freezePlayer', (state) => {
-	native.freezeEntityPosition(alt.getLocalPlayer().scriptID, state);
+	native.freezeEntityPosition(alt.Player.local.scriptID, state);
 });
 
 // Fade Out Screen
@@ -599,7 +599,7 @@ export function Screen2dToWorld3dPosition(absoluteX, absoluteY, flags, ignore, c
 
 // Get the Ground Location
 export function Get3DFrom2D(absoluteX, absoluteY, callback) {
-	Screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.getLocalPlayer().scriptID, (result) => {
+	Screen2dToWorld3dPosition(absoluteX, absoluteY, 1, alt.Player.local.scriptID, (result) => {
 		callback(result[2]);
 	});
 }
@@ -638,7 +638,7 @@ function drawMessagesAboveHead() {
 			continue;
 		}
 
-		let distanceFromLocal = Distance(msg.player.pos, alt.getLocalPlayer().pos);
+		let distanceFromLocal = Distance(msg.player.pos, alt.Player.local.pos);
 		if (distanceFromLocal >= 25)
 			continue;
 
