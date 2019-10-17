@@ -387,7 +387,7 @@ alt.on('disconnect', () => {
 	native.transitionFromBlurred(1);
 });
 
-alt.on('update', () => {
+alt.everyTick(() => {
 	if (markers.size >= 1) {
 		markers.forEach((value) => {
 			value.Draw();
